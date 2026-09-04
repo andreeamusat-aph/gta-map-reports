@@ -6,7 +6,7 @@ export default async function handler(req) {
 
   if (hasAuth) {
     // Serve the report
-    const url = new URL('/index.html', req.url);
+    const url = new URL('/_report.html', req.url);
     const res = await fetch(url);
     return new Response(res.body, {
       status: 200,
