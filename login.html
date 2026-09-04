@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GT Anywhere — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0A1628;--cream:#FAF7F2;--gold:#D4A843;--gold-light:#F5ECD4;--rule:#DDD5C9;--alert:#B03A2E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--navy);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-card{background:#fff;border:1px solid var(--rule);border-radius:6px;padding:48px 40px;max-width:380px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(10,22,40,.08)}
+.login-card h1{font-family:'Literata',Georgia,serif;font-size:24px;font-weight:700;margin-bottom:4px}
+.login-card .sub{font-size:13px;color:#7B8DA3;margin-bottom:28px}
+.login-card input{width:100%;padding:12px 14px;border:1px solid var(--rule);border-radius:3px;font-family:'Inter',sans-serif;font-size:15px;margin-bottom:16px;outline:none;transition:border-color .15s}
+.login-card input:focus{border-color:var(--gold)}
+.login-card button{width:100%;padding:12px;background:var(--navy);color:var(--cream);border:none;border-radius:3px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .15s}
+.login-card button:hover{background:var(--gold);color:var(--navy)}
+.login-card button:disabled{opacity:.5;cursor:not-allowed}
+.error{color:var(--alert);font-size:13px;font-weight:600;margin-top:12px;display:none}
+</style>
+</head><body>
+<div class="login-card">
+  <h1>GT Anywhere</h1>
+  <p class="sub">MAP Reports — Enter password to continue</p>
+  <form id="loginForm">
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus>
+    <button type="submit" id="btn">Sign In</button>
+  </form>
+  <p class="error" id="err">Incorrect password. Try again.</p>
+</div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn');
+  const err = document.getElementById('err');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: document.getElementById('pw').value })
+    });
+    if (res.ok) {
+      window.location.href = '/';
+    } else {
+      err.style.display = 'block';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  } catch(ex) {
+    err.textContent = 'Connection error. Try again.';
+    err.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Sign In';
+});
+</script>
+</body></html>
