@@ -111,6 +111,7 @@ footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);font-si
 @media print{.rail{display:none}body{background:#fff;font-size:11pt}.wrap{padding:0;max-width:none}section{page-break-inside:avoid;margin-top:20px}.page{display:block!important}h1{font-size:24pt}th{position:static!important}}
 @media(max-width:640px){.hero-grid{grid-template-columns:repeat(2,1fr)}.subject-grid{grid-template-columns:1fr}.guide-grid{grid-template-columns:1fr}h1{font-size:28px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head><body>
 <div class="rail"><div class="rail-in">
   <div class="rail-brand">GT Anywhere<small>MAP vs Enrollment Placement &middot; Fall 2026</small></div>
@@ -20187,22 +20188,34 @@ function filterTable(){
   });
 }
 
-// Action plans — editable action cells
+// Supabase client
+const _sb=window.supabase.createClient(
+  'https://hxqyrewghxizrtjxadpd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4cXlyZXdnaHhpenJ0anhhZHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MDY3OTcsImV4cCI6MjEwNDA4Mjc5N30.8zPwNwASEeJLhs4x7wq23jQYxpEm-32cBrceSBMhK00'
+);
+
+// Action plans — editable action cells (Supabase-backed)
+async function saveNote(key, note){
+  const {error}=await _sb.from('action_notes').upsert(
+    {action_key:key, note:note, updated_at:new Date().toISOString()},
+    {onConflict:'action_key'}
+  );
+  if(error) console.error('Save failed:', error);
+}
+
 function toggleEdit(btn){
   const cell=btn.closest('.action-cell');
   const text=cell.querySelector('.act-text');
   const ta=cell.querySelector('.act-edit');
   if(cell.classList.contains('editing')){
-    // Save
     const val=ta.value.trim();
     text.textContent=val;
     cell.classList.remove('editing');
     cell.classList.add('edited');
     btn.innerHTML='&#9998;';
     const key=cell.dataset.key;
-    if(key) localStorage.setItem('action:'+key, val);
+    if(key) saveNote(key, val);
   } else {
-    // Enter edit mode
     ta.value=text.textContent;
     cell.classList.add('editing');
     btn.innerHTML='&#10003;';
@@ -20223,15 +20236,20 @@ document.addEventListener('keydown',function(e){
     }
   }
 });
-// Load saved actions on page load
-document.querySelectorAll('.action-cell[data-key]').forEach(cell=>{
-  const saved=localStorage.getItem('action:'+cell.dataset.key);
-  if(saved!==null){
-    cell.querySelector('.act-text').textContent=saved;
-    cell.querySelector('.act-edit').value=saved;
-    cell.classList.add('edited');
-  }
-});
+// Load saved notes from Supabase on page load
+(async function(){
+  const {data,error}=await _sb.from('action_notes').select('action_key,note');
+  if(error){console.error('Load failed:',error);return;}
+  const map=Object.fromEntries((data||[]).map(r=>[r.action_key,r.note]));
+  document.querySelectorAll('.action-cell[data-key]').forEach(cell=>{
+    const saved=map[cell.dataset.key];
+    if(saved!==undefined && saved!==''){
+      cell.querySelector('.act-text').textContent=saved;
+      cell.querySelector('.act-edit').value=saved;
+      cell.classList.add('edited');
+    }
+  });
+})();
 
 // Action plans student filter
 function filterActionStudent(email){
